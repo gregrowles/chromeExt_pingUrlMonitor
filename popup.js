@@ -228,7 +228,7 @@ async function addUrl() {
 // Delete URL
 async function deleteUrl(index) {
   const result = await chrome.storage.sync.get(['urls']);
-  const urls = result.urls || [];
+  const urls = (result.urls || [] ).sort( (a,b) => ( a.alias || a.url ) > ( b.alias || b.url ) ? 1 : -1 );
   
   if (index >= 0 && index < urls.length) {
     const deletedUrl = urls[index].url;
