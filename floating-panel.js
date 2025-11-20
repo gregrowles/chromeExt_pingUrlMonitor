@@ -93,6 +93,9 @@
         cursor: pointer;
         transition: background 0.2s ease;
       }
+      #${PANEL_ID} header button[data-action="collapse"] {
+        font-size: 20px;
+      }
       #${PANEL_ID} header button:hover {
         background: rgba(255,255,255,0.35);
       }
@@ -173,6 +176,18 @@
         font-weight: 600;
         text-transform: capitalize;
         margin-right:4px;
+      }
+      #${PANEL_ID} .group-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 1px 6px;
+        border-radius: 999px;
+        background: rgba(99, 102, 241, 0.15);
+        color: #4338ca;
+        font-size: 10px;
+        font-weight: 600;
+        white-space: nowrap;
+        margin-top: 2px;
       }
       #${PANEL_ID} .status-online {
         background: rgb(34,197,95);
@@ -319,6 +334,29 @@
     toggleLauncher(shouldShow);
   }
 
+  function setHideLauncherPreference(value) {
+    hideLauncherPreference = value;
+    try {
+      chrome.storage.sync.set({ hideLauncher: value });
+    } catch (error) {
+      // ignore
+    }
+  }
+
+  function minimizeToLauncher() {
+    if (hideLauncherPreference) {
+      setHideLauncherPreference(false);
+    }
+    setHidden(true);
+  }
+
+  function disableFloatingButton() {
+    if (!hideLauncherPreference) {
+      setHideLauncherPreference(true);
+    }
+    setHidden(true);
+  }
+
   function setHidden(hidden) {
     if (!panelElement) return;
     panelElement.classList.toggle('is-hidden', hidden);
@@ -330,15 +368,15 @@
     if (!panelElement) return;
     panelElement.classList.toggle('collapsed', collapsed);
     setStoredPanelState(collapsed ? 'collapsed' : 'expanded');
-    updateCollapseButton(collapsed);
+    updateCollapseButton();
   }
 
-  function updateCollapseButton(collapsed) {
+  function updateCollapseButton() {
     if (!panelElement) return;
     const collapseBtn = panelElement.querySelector('button[data-action="collapse"]');
     if (!collapseBtn) return;
-    collapseBtn.textContent = collapsed ? '+' : '–';
-    const title = collapsed ? 'Expand panel' : 'Collapse panel';
+    collapseBtn.textContent = '-';
+    const title = 'Show launcher button';
     collapseBtn.setAttribute('title', title);
     collapseBtn.setAttribute('aria-label', title);
   }
@@ -409,7 +447,7 @@
           return;
         }
         setHidden(false);
-        setCollapsed(getStoredPanelState() === 'collapsed');
+        setCollapsed(false);
       });
       applyLauncherPosition(launcher, getStoredLauncherPosition());
       enableLauncherDragging(launcher);
@@ -509,8 +547,8 @@
           <span>Live status</span>
         </div>
         <div class="controls">
-          <button type="button" data-action="collapse" title="Collapse panel" aria-label="Collapse panel">–</button>
-          <button type="button" data-action="close" title="Hide panel" aria-label="Hide panel">×</button>
+          <button type="button" data-action="collapse" title="Show launcher button" aria-label="Show launcher button">-</button>
+          <button type="button" data-action="close" title="Disable floating button" aria-label="Disable floating button">✕</button>
         </div>
       </header>
       <div class="summary">
@@ -533,14 +571,19 @@
     const collapseBtn = panel.querySelector('button[data-action="collapse"]');
     const closeBtn = panel.querySelector('button[data-action="close"]');
     collapseBtn.addEventListener('click', () => {
-      const shouldCollapse = !panel.classList.contains('collapsed');
-      setCollapsed(shouldCollapse);
+      minimizeToLauncher();
     });
     closeBtn.addEventListener('click', () => {
-      setHidden(true);
+      disableFloatingButton();
     });
 
-    setCollapsed(getStoredPanelState() === 'collapsed');
+    const previouslyCollapsed = getStoredPanelState() === 'collapsed';
+    if (previouslyCollapsed) {
+      setCollapsed(false);
+      setStoredPanelState('expanded');
+    } else {
+      setCollapsed(false);
+    }
     if (isPanelHiddenPreference()) {
       panel.classList.add('is-hidden');
     }
@@ -655,6 +698,7 @@
 
       const status = (urlData.status || 'checking').toLowerCase();
       const alias = urlData.alias?.trim() || urlData.url || 'Unknown URL';
+      const groupLabel = urlData.group?.trim();
 
       const statusClass = urlData.status === 'online' ? 'bg-green-500' : urlData.status === 'offline' ? 'bg-red-500' : 'bg-gray-400';
       const statusText = urlData.status === 'online' ? 'Online' : urlData.status === 'offline' ? 'Offline' : 'Checking...';
@@ -663,6 +707,7 @@
         <div class="meta flex flex-col">
             <span class="status-pill status-${status} ${statusClass}">&nbsp;</span>
             <span class="alias-name">${alias}</span>
+            ${groupLabel ? `<span class="group-pill">${groupLabel}</span>` : ''}
         </div>
         <div class="url"><a href="${urlData.url || ''}">${urlData.url || ''}</a></div>
         <div class="meta">

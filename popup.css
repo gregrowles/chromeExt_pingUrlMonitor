@@ -10,3 +10,16 @@ body {
   transition: background-color 0.2s ease;
 }
 
+.tab-button {
+  background: transparent;
+}
+
+.tab-button.active {
+  background: #e0f2fe;
+  color: #0c4a6e;
+}
+
+.tab-panel.hidden {
+  display: none;
+}
+

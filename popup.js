@@ -6,7 +6,11 @@ const newAliasInput = document.getElementById('newAlias');
 const addUrlBtn = document.getElementById('addUrl');
 const urlList = document.getElementById('urlList');
 const emptyState = document.getElementById('emptyState');
+const newGroupInput = document.getElementById('newGroup');
 const hideLauncherToggle = document.getElementById('hideLauncherToggle');
+const tabButtons = document.querySelectorAll('[data-tab-target]');
+const tabPanels = document.querySelectorAll('.tab-panel');
+let currentTab = '';
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
@@ -14,6 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadUrls();
   setupEventListeners();
   initializeTooltips();
+  initializeTabs();
 });
 
 // Initialize tooltips with Popper.js (via Tippy.js)
@@ -94,6 +99,12 @@ function createUrlItem(urlData, index) {
   const aliasLine = hasAlias
     ? `<div class="text-xs text-gray-500 break-all" data-tippy-content="${urlData.url}">${urlData.url}</div>`
     : '';
+  const groupLabel = urlData.group?.trim();
+  const groupLine = groupLabel
+    ? `<div class="inline-flex items-center px-2 py-0.5 mt-1 text-[11px] font-medium rounded-full bg-indigo-100 text-indigo-700">
+         ${groupLabel}
+       </div>`
+    : '';
   
   div.innerHTML = `
     <div class="flex items-center gap-3 flex-1">
@@ -101,11 +112,12 @@ function createUrlItem(urlData, index) {
       <div class="flex-1">
         <div class="font-medium text-gray-800 url-text break-words" data-tippy-content="${primaryTooltip}">${displayName}</div>
         ${aliasLine}
+        ${groupLine}
         <div class="text-xs text-gray-500 last-checked" data-tippy-content="${fullLastChecked}">Last checked: ${lastChecked}</div>
       </div>
     </div>
     <button 
-      class="delete-url px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors text-sm"
+      class="delete-url px-3 py-1 bg-slate-400 text-white rounded-md hover:bg-slate-600 transition-colors text-sm"
       data-index="${index}"
       data-tippy-content="Remove this URL from monitoring"
     >
@@ -143,9 +155,39 @@ function setupEventListeners() {
       addUrl();
     }
   });
+  if (newGroupInput) {
+    newGroupInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        addUrl();
+      }
+    });
+  }
   if (hideLauncherToggle) {
     hideLauncherToggle.addEventListener('change', handleHideLauncherToggle);
   }
+}
+
+function initializeTabs() {
+  if (!tabButtons.length || !tabPanels.length) return;
+  tabButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      setActiveTab(button.dataset.tabTarget);
+    });
+  });
+  setActiveTab('monitored');
+}
+
+function setActiveTab(targetTab) {
+  if (!targetTab) return;
+  currentTab = targetTab;
+  tabPanels.forEach((panel) => {
+    const isActive = panel.dataset.tab === targetTab;
+    panel.classList.toggle('hidden', !isActive);
+  });
+  tabButtons.forEach((button) => {
+    const isActive = button.dataset.tabTarget === targetTab;
+    button.classList.toggle('active', isActive);
+  });
 }
 
 // Save ping interval
@@ -187,6 +229,7 @@ async function handleHideLauncherToggle() {
 async function addUrl() {
   const url = newUrlInput.value.trim();
   const alias = newAliasInput.value.trim();
+  const group = newGroupInput ? newGroupInput.value.trim() : '';
   
   if (!url) {
     alert('Please enter a valid URL');
@@ -214,6 +257,7 @@ async function addUrl() {
   urls.push({
     url: url,
     alias: alias || null,
+    group: group || null,
     status: 'checking',
     lastChecked: null
   });
@@ -223,6 +267,9 @@ async function addUrl() {
   // Clear input
   newUrlInput.value = '';
   newAliasInput.value = '';
+  if (newGroupInput) {
+    newGroupInput.value = '';
+  }
   
   // Reload display
   await loadUrls();
