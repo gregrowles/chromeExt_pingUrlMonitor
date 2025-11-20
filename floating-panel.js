@@ -9,6 +9,7 @@
   const STYLE_ID = `${PANEL_ID}-styles`;
   const PANEL_STATE_KEY = 'urlPingPanelState';
   const PANEL_VISIBILITY_KEY = 'urlPingPanelHidden';
+  const LAUNCHER_POSITION_KEY = 'urlPingLauncherPosition';
 
   let panelElement;
   let listContainer;
@@ -16,6 +17,10 @@
   let summaryCountsElement;
   let summaryUpdatedElement;
   let launcherButton;
+  let latestTotals = {
+    online: 0,
+    offline: 0
+  };
 
   function createStyles() {
     if (document.getElementById(STYLE_ID)) return;
@@ -145,8 +150,12 @@
       }
       #${PANEL_ID} .alias-row .url {
         font-size: 12px;
-        color: #475569;
         word-break: break-all;
+        white-space: nowrap;
+      }
+      #${PANEL_ID} .alias-row .url a {
+        text-decoration:none;
+        color: #475569;
       }
       #${PANEL_ID} .alias-row .meta {
         font-size: 10px;
@@ -157,7 +166,7 @@
         padding: 1px;
       }
       #${PANEL_ID} .status-pill {
-        padding: 1px 5px;
+        padding: 0 5px;
         border-radius: 999px;
         font-size: 9px;
         font-weight: 600;
@@ -187,21 +196,53 @@
         bottom: 20px;
         right: 20px;
         background: linear-gradient(120deg, #1d4ed8, #0ea5e9);
-        color: #fff;
         border: none;
         border-radius: 999px;
-        padding: 10px 16px;
-        font-size: 13px;
-        font-weight: 600;
+        padding: 6px 10px;
         box-shadow: 0 10px 25px rgba(15, 23, 42, 0.2);
         cursor: pointer;
         z-index: 2147483647;
         display: none;
+        align-items: center;
+        gap: 6px;
+        color: #0f172a;
+        background: rgba(255,255,255,0.95);
+        border: 1px solid rgba(148,163,184,0.6);
       }
       #${LAUNCHER_ID}.visible {
         display: flex;
+      }
+      #${LAUNCHER_ID} .count-badge {
+        display: inline-flex;
         align-items: center;
-        gap: 6px;
+        justify-content: center;
+        min-width: 20px;
+        height: 20px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #fff;
+        padding: 0 6px;
+      }
+      #${LAUNCHER_ID} .badge-online {
+        background: #22c55e;
+      }
+      #${LAUNCHER_ID} .badge-offline {
+        background: #FECACA;
+      }
+      #${LAUNCHER_ID} .badge-offline-hot {
+        background: #ef4444;
+      } 
+      #${LAUNCHER_ID} .badge-label {
+        font-size: 11px;
+        font-weight: 500;
+        margin-left: 4px;
+        color: #475569;
+      }
+      #${LAUNCHER_ID} .launcher-section {
+        display: flex;
+        align-items: center;
+        gap: 4px;
       }
     `;
     (document.head || document.documentElement).appendChild(style);
@@ -255,6 +296,7 @@
     }
     if (launcherButton) {
       launcherButton.classList.toggle('visible', shouldShow);
+      updateLauncherBadge();
     }
   }
 
@@ -282,20 +324,158 @@
     collapseBtn.setAttribute('aria-label', title);
   }
 
+  function getStoredLauncherPosition() {
+    try {
+      const raw = localStorage.getItem(LAUNCHER_POSITION_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (typeof parsed !== 'object') return null;
+      return parsed;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function saveLauncherPosition(position) {
+    try {
+      localStorage.setItem(LAUNCHER_POSITION_KEY, JSON.stringify(position));
+    } catch (error) {
+      // ignore
+    }
+  }
+
+  function applyLauncherPosition(launcher, position) {
+    if (!launcher || !position) return;
+    const hasLeft = typeof position.left === 'string';
+    const hasTop = typeof position.top === 'string';
+    const hasRight = typeof position.right === 'string';
+    const hasBottom = typeof position.bottom === 'string';
+
+    if (hasLeft) {
+      launcher.style.left = position.left;
+      launcher.style.right = 'auto';
+    } else if (hasRight) {
+      launcher.style.right = position.right;
+      launcher.style.left = 'auto';
+    } else {
+      launcher.style.left = 'auto';
+      launcher.style.right = '20px';
+    }
+
+    if (hasTop) {
+      launcher.style.top = position.top;
+      launcher.style.bottom = 'auto';
+    } else if (hasBottom) {
+      launcher.style.bottom = position.bottom;
+      launcher.style.top = 'auto';
+    } else {
+      launcher.style.top = 'auto';
+      launcher.style.bottom = '20px';
+    }
+  }
+
   function createLauncher() {
     let launcher = document.getElementById(LAUNCHER_ID);
     if (!launcher) {
       launcher = document.createElement('button');
       launcher.id = LAUNCHER_ID;
       launcher.type = 'button';
-      launcher.innerHTML = 'URL Monitor';
-      launcher.addEventListener('click', () => {
+      launcher.setAttribute('aria-label', 'Show URL monitor panel');
+      launcher.dataset.skipClick = 'false';
+      launcher.addEventListener('click', (event) => {
+        if (launcher.dataset.skipClick === 'true') {
+          event.preventDefault();
+          event.stopPropagation();
+          launcher.dataset.skipClick = 'false';
+          return;
+        }
         setHidden(false);
         setCollapsed(getStoredPanelState() === 'collapsed');
       });
+      applyLauncherPosition(launcher, getStoredLauncherPosition());
+      enableLauncherDragging(launcher);
       document.body.appendChild(launcher);
+      launcherButton = launcher;
+      updateLauncherBadge();
     }
     return launcher;
+  }
+
+  function enableLauncherDragging(launcher) {
+    if (!launcher) return;
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let initialLeft = 0;
+    let initialTop = 0;
+    let hasMoved = false;
+
+    launcher.addEventListener('pointerdown', (event) => {
+      if (event.button !== 0) return;
+      isDragging = true;
+      startX = event.clientX;
+      startY = event.clientY;
+      const rect = launcher.getBoundingClientRect();
+      initialLeft = rect.left;
+      initialTop = rect.top;
+      launcher.setPointerCapture(event.pointerId);
+      launcher.classList.add('dragging');
+      hasMoved = false;
+      event.preventDefault();
+    });
+
+    const endDrag = () => {
+      if (!isDragging) return;
+      isDragging = false;
+      launcher.classList.remove('dragging');
+    };
+
+    launcher.addEventListener('pointermove', (event) => {
+      if (!isDragging) return;
+      const dx = event.clientX - startX;
+      const dy = event.clientY - startY;
+      if (!hasMoved && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
+        hasMoved = true;
+      }
+      const left = initialLeft + dx;
+      const top = initialTop + dy;
+      launcher.style.left = `${left}px`;
+      launcher.style.top = `${top}px`;
+      launcher.style.right = 'auto';
+      launcher.style.bottom = 'auto';
+      saveLauncherPosition({
+        left: launcher.style.left,
+        top: launcher.style.top
+      });
+    });
+
+    launcher.addEventListener('pointerup', (event) => {
+      if (hasMoved) {
+        launcher.dataset.skipClick = 'true';
+        requestAnimationFrame(() => {
+          launcher.dataset.skipClick = 'false';
+        });
+      }
+      endDrag(event);
+    });
+    launcher.addEventListener('pointercancel', endDrag);
+    launcher.addEventListener('pointerleave', endDrag);
+  }
+
+  function updateLauncherBadge() {
+    if (!launcherButton) return;
+    const online = latestTotals.online ?? 0;
+    const offline = latestTotals.offline ?? 0;
+    launcherButton.innerHTML = `
+      <div class="launcher-section">
+        <span class="count-badge badge-online" title="${online} online">${online}</span>
+        <span class="badge-label">online</span>
+      </div>
+      <div class="launcher-section">
+        <span class="count-badge badge-offline${offline>0?'-hot':''}" title="${offline} offline">${offline}</span>
+        <span class="badge-label">offline</span>
+      </div>
+    `;
   }
 
   function createPanel() {
@@ -410,11 +590,16 @@
     });
 
     const totalUrls = urls.length;
+    latestTotals = {
+      online: totals.online,
+      offline: totals.offline
+    };
+    updateLauncherBadge();
     var countParts = [
-      `<div style="line-height:14px;"><span style="font-size:13px; background: #DCFCE7;border-radius: 50%;padding: 0 3px;text-align:center;padding: 0 3px;">${totals.online}</span> online</div>`
+      `<div style="line-height:14px;"><span style="font-size:13px; background: rgb(34,197,95);color:#fff;border-radius: 50%;padding: 1 4px;text-align:center;padding: 0 3px;">${totals.online}</span> online</div>`
     ];
 
-    if ( totals.offline != 0 ) countParts.push( `<div class="whitespace-nowrap"><span style="font-size:13px; background: #FECACA; border-radius: 50%; width:14px;text-align:center;padding: 0 3px;">${totals.offline}</span> offline</div>` );
+    if ( totals.offline != 0 ) countParts.push( `<div class="whitespace-nowrap"><span style="font-size:13px; background:red;color:#fff; border-radius: 50%; width:14px;text-align:center;padding: 0 3px;">${totals.offline}</span> offline</div>` );
     if ( totals.checking != 0 ) countParts.push( `<div class="whitespace-nowrap">${totals.checking} checking</div>` );
     
     summaryCountsElement.innerHTML = countParts.join('');
@@ -462,7 +647,7 @@
             <span class="status-pill status-${status} ${statusClass}">&nbsp;</span>
             <span class="alias-name">${alias}</span>
         </div>
-        <div class="url">${urlData.url || ''}</div>
+        <div class="url"><a href="${urlData.url || ''}">${urlData.url || ''}</a></div>
         <div class="meta">
           <span>${formatTime(urlData.lastChecked)}</span>
         </div>
