@@ -2,6 +2,7 @@
 const pingIntervalInput = document.getElementById('pingInterval');
 const saveIntervalBtn = document.getElementById('saveInterval');
 const newUrlInput = document.getElementById('newUrl');
+const newAliasInput = document.getElementById('newAlias');
 const addUrlBtn = document.getElementById('addUrl');
 const urlList = document.getElementById('urlList');
 const emptyState = document.getElementById('emptyState');
@@ -52,7 +53,7 @@ async function loadUrls() {
 function renderUrls(urls) {
   urlList.innerHTML = '';
   
-  urls.forEach((urlData, index) => {
+  urls.sort( (a,b) => ( a.alias || a.url ) > ( b.alias || b.url ) ? 1 : -1 ).forEach((urlData, index) => {
     const urlItem = createUrlItem(urlData, index);
     urlList.appendChild(urlItem);
   });
@@ -83,11 +84,19 @@ function createUrlItem(urlData, index) {
     ? new Date(urlData.lastChecked).toLocaleString()
     : 'Never checked';
   
+  const hasAlias = Boolean(urlData.alias && urlData.alias.trim());
+  const displayName = hasAlias ? urlData.alias.trim() : urlData.url;
+  const primaryTooltip = hasAlias ? urlData.alias.trim() : urlData.url;
+  const aliasLine = hasAlias
+    ? `<div class="text-xs text-gray-500 break-all" data-tippy-content="${urlData.url}">${urlData.url}</div>`
+    : '';
+  
   div.innerHTML = `
     <div class="flex items-center gap-3 flex-1">
       <div class="status-indicator w-3 h-3 rounded-full ${statusClass}" data-tippy-content="${statusText}"></div>
       <div class="flex-1">
-        <div class="font-medium text-gray-800 url-text" data-tippy-content="${urlData.url}">${urlData.url}</div>
+        <div class="font-medium text-gray-800 url-text break-words" data-tippy-content="${primaryTooltip}">${displayName}</div>
+        ${aliasLine}
         <div class="text-xs text-gray-500 last-checked" data-tippy-content="${fullLastChecked}">Last checked: ${lastChecked}</div>
       </div>
     </div>
@@ -121,6 +130,11 @@ function setupEventListeners() {
   saveIntervalBtn.addEventListener('click', saveInterval);
   addUrlBtn.addEventListener('click', addUrl);
   newUrlInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      addUrl();
+    }
+  });
+  newAliasInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
       addUrl();
     }
@@ -160,6 +174,7 @@ async function saveInterval() {
 // Add new URL
 async function addUrl() {
   const url = newUrlInput.value.trim();
+  const alias = newAliasInput.value.trim();
   
   if (!url) {
     alert('Please enter a valid URL');
@@ -186,6 +201,7 @@ async function addUrl() {
   // Add new URL
   urls.push({
     url: url,
+    alias: alias || null,
     status: 'checking',
     lastChecked: null
   });
@@ -194,6 +210,7 @@ async function addUrl() {
   
   // Clear input
   newUrlInput.value = '';
+  newAliasInput.value = '';
   
   // Reload display
   await loadUrls();

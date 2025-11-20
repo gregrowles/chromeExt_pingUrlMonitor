@@ -15,29 +15,39 @@
 </head>
 <body class="bg-gray-50 min-w-[500px]">
   <div class="container mx-auto p-4">
+
     <!-- Header -->
     <div class="mb-6">
       <h1 class="text-2xl font-bold text-gray-800 mb-2">URL Ping Monitor</h1>
       <p class="text-sm text-gray-600">Monitor your URLs and get notified when they go offline</p>
     </div>
 
+    <!-- URL List -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-4">
+        <h2 class="text-lg font-semibold text-gray-700 mb-3">Monitored URLs</h2>
+        <div id="urlList" class="space-y-2">
+            <!-- URLs will be dynamically added here -->
+        </div>
+        <div id="emptyState" class="text-center py-8 text-gray-500">
+            <p>No URLs added yet. Add a URL above to start monitoring.</p>
+        </div>
+    </div>
+    
     <!-- Settings Section -->
     <div class="bg-white rounded-lg shadow-md p-4 mb-4">
       <h2 class="text-lg font-semibold text-gray-700 mb-3">Settings</h2>
       <div class="flex items-center gap-4">
-        <label class="text-sm font-medium text-gray-700" data-tippy-content="How often to check URLs (minimum 5 seconds)">Ping Interval (seconds):</label>
+        <label class="text-sm font-medium text-gray-700">Ping Interval (seconds):</label>
         <input 
           type="number" 
           id="pingInterval" 
           min="5" 
           value="30" 
           class="w-24 px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          data-tippy-content="Enter interval in seconds (minimum: 5)"
         />
         <button 
           id="saveInterval" 
           class="px-4 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm"
-          data-tippy-content="Save the ping interval setting"
         >
           Save
         </button>
@@ -47,32 +57,36 @@
     <!-- Add URL Section -->
     <div class="bg-white rounded-lg shadow-md p-4 mb-4">
       <h2 class="text-lg font-semibold text-gray-700 mb-3">Add URL</h2>
-      <div class="flex gap-2">
-        <input 
-          type="url" 
-          id="newUrl" 
-          placeholder="https://example.com" 
-          class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <button 
-          id="addUrl" 
-          class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
-        >
-          Add
-        </button>
+      <div class="flex flex-col gap-3">
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-gray-700" for="newAlias">Alias (optional)</label>
+          <input 
+            type="text"
+            id="newAlias"
+            placeholder="Marketing site"
+            class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div class="flex flex-col gap-2 md:flex-row">
+          <div class="flex-1 flex flex-col gap-1">
+            <label class="text-sm font-medium text-gray-700" for="newUrl">URL</label>
+            <input 
+              type="url" 
+              id="newUrl" 
+              placeholder="https://example.com" 
+              class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <button 
+            id="addUrl" 
+            class="md:self-end px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors h-11"
+          >
+            Add
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- URL List -->
-    <div class="bg-white rounded-lg shadow-md p-4">
-      <h2 class="text-lg font-semibold text-gray-700 mb-3">Monitored URLs</h2>
-      <div id="urlList" class="space-y-2">
-        <!-- URLs will be dynamically added here -->
-      </div>
-      <div id="emptyState" class="text-center py-8 text-gray-500">
-        <p>No URLs added yet. Add a URL above to start monitoring.</p>
-      </div>
-    </div>
   </div>
 
   <script src="popup.js"></script>
