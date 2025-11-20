@@ -21,6 +21,7 @@
     online: 0,
     offline: 0
   };
+  let hideLauncherPreference = false;
 
   function createStyles() {
     if (document.getElementById(STYLE_ID)) return;
@@ -282,6 +283,15 @@
     }
   }
 
+  async function loadPreferences() {
+    try {
+      const result = await chrome.storage.sync.get(['hideLauncher']);
+      hideLauncherPreference = Boolean(result.hideLauncher);
+    } catch (error) {
+      hideLauncherPreference = false;
+    }
+  }
+
   function setPanelHiddenPreference(hidden) {
     try {
       localStorage.setItem(PANEL_VISIBILITY_KEY, hidden ? 'true' : 'false');
@@ -300,11 +310,20 @@
     }
   }
 
+  function refreshLauncherVisibility() {
+    const shouldShow = Boolean(
+      panelElement &&
+        panelElement.classList.contains('is-hidden') &&
+        !hideLauncherPreference
+    );
+    toggleLauncher(shouldShow);
+  }
+
   function setHidden(hidden) {
     if (!panelElement) return;
     panelElement.classList.toggle('is-hidden', hidden);
     setPanelHiddenPreference(hidden);
-    toggleLauncher(hidden);
+    refreshLauncherVisibility();
   }
 
   function setCollapsed(collapsed) {
@@ -524,10 +543,8 @@
     setCollapsed(getStoredPanelState() === 'collapsed');
     if (isPanelHiddenPreference()) {
       panel.classList.add('is-hidden');
-      toggleLauncher(true);
-    } else {
-      toggleLauncher(false);
     }
+    refreshLauncherVisibility();
 
     let isDragging = false;
     let startX = 0;
@@ -669,21 +686,28 @@
 
   function registerListeners() {
     chrome.storage.onChanged.addListener((changes, areaName) => {
-      if (areaName === 'sync' && changes.urls) {
+      if (areaName !== 'sync') return;
+      if (changes.urls) {
         renderUrls(changes.urls.newValue || []);
+      }
+      if (Object.prototype.hasOwnProperty.call(changes, 'hideLauncher')) {
+        hideLauncherPreference = Boolean(changes.hideLauncher.newValue);
+        refreshLauncherVisibility();
       }
     });
   }
 
-  function init() {
+  async function init() {
     if (!document.body) {
       document.addEventListener('DOMContentLoaded', init, { once: true });
       return;
     }
     createStyles();
+    await loadPreferences();
     createPanel();
-    loadData();
+    await loadData();
     registerListeners();
+    refreshLauncherVisibility();
   }
 
   init();

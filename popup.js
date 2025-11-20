@@ -6,6 +6,7 @@ const newAliasInput = document.getElementById('newAlias');
 const addUrlBtn = document.getElementById('addUrl');
 const urlList = document.getElementById('urlList');
 const emptyState = document.getElementById('emptyState');
+const hideLauncherToggle = document.getElementById('hideLauncherToggle');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
@@ -28,9 +29,12 @@ function initializeTooltips() {
 
 // Load settings from storage
 async function loadSettings() {
-  const result = await chrome.storage.sync.get(['pingInterval']);
+  const result = await chrome.storage.sync.get(['pingInterval', 'hideLauncher']);
   if (result.pingInterval) {
     pingIntervalInput.value = result.pingInterval;
+  }
+  if (hideLauncherToggle) {
+    hideLauncherToggle.checked = Boolean(result.hideLauncher);
   }
 }
 
@@ -139,6 +143,9 @@ function setupEventListeners() {
       addUrl();
     }
   });
+  if (hideLauncherToggle) {
+    hideLauncherToggle.addEventListener('change', handleHideLauncherToggle);
+  }
 }
 
 // Save ping interval
@@ -169,6 +176,11 @@ async function saveInterval() {
     saveIntervalBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
     saveIntervalBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
   }, 2000);
+}
+
+async function handleHideLauncherToggle() {
+  const hideLauncher = hideLauncherToggle.checked;
+  await chrome.storage.sync.set({ hideLauncher });
 }
 
 // Add new URL
