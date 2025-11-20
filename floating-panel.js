@@ -47,7 +47,7 @@
         width: 200px;
       }
       #${PANEL_ID} header {
-        padding: 10px 12px;
+        padding: 6px;
         background: linear-gradient(120deg, #1d4ed8, #0ea5e9);
         color: #fff;
         display: flex;
@@ -92,7 +92,7 @@
       }
       #${PANEL_ID} .summary {
         display: none;
-        padding: 10px 12px;
+        padding: 6px;
         border-bottom: 1px solid rgba(148, 163, 184, 0.3);
         font-size: 12px;
         color: #475569;
