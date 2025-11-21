@@ -22,6 +22,7 @@
     offline: 0
   };
   let hideLauncherPreference = false;
+  let sha256 = window.sha256;
 
   function createStyles() {
     if (document.getElementById(STYLE_ID)) return;
@@ -143,7 +144,7 @@
         background: #f8fafc;
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 1px;
       }
       #${PANEL_ID} .alias-row .alias-name {
         font-size: 13px;
@@ -168,6 +169,7 @@
         justify-content: flex-start;
         align-items: center;
         padding: 1px;
+        flex-direction: row;
       }
       #${PANEL_ID} .status-pill {
         padding: 0 5px;
@@ -182,12 +184,13 @@
         align-items: center;
         padding: 1px 6px;
         border-radius: 999px;
-        background: rgba(99, 102, 241, 0.15);
-        color: #4338ca;
+        /* background: rgba(99, 102, 241, 0.15);
+        color: #4338ca; */
         font-size: 10px;
         font-weight: 600;
         white-space: nowrap;
         margin-top: 2px;
+        margin-left:4px;
       }
       #${PANEL_ID} .status-online {
         background: rgb(34,197,95);
@@ -235,8 +238,8 @@
         min-width: 20px;
         height: 20px;
         border-radius: 999px;
-        font-size: 11px;
-        font-weight: 600;
+        font-size: 10px;
+        font-weight: 300;
         color: #fff;
         padding: 0 6px;
       }
@@ -296,6 +299,51 @@
     } catch (error) {
       return false;
     }
+  }
+
+  function paddCols(splArr) {
+    var ret = [];
+  
+    for (var i = 0; i < splArr.length; i++) {
+      var col = splArr[i];
+  
+      for (var r = 0; r < (6 - (splArr[i]).toString().length); r++) {
+        col += '0';
+      }
+  
+      ret.push(col);
+    }
+  
+    return ret;
+  }
+  
+  function colorHexToRgbA(hex)
+  {
+      var c;
+      if ( /^#([A-Fa-f0-9]{3}){1,2}$/.test( hex ) )
+      {
+          c= hex.substring(1).split('');
+          if(c.length== 3){
+              c= [c[0], c[0], c[1], c[1], c[2], c[2]];
+          }
+          c= '0x'+c.join('');
+          return (''+[(c>>16)&255, (c>>8)&255, c&255].join(',')+'');
+      }
+      throw new Error('Bad Hex: ' + hex);
+  }
+  
+  function hexColorFromHash( strHash )
+  {
+      var useHash = strHash || '0xD503d8369ed6CA01321456b070CAbd34449642b8';
+      var cols = paddCols( useHash.substring(2).match(/.{1,6}/g) );
+      var final = [];
+  
+      for (var i = 0; i < cols.length; i++)
+      {
+          final.push ('#' + cols[ i ] );
+      }
+  
+      return final;
   }
 
   async function loadPreferences() {
@@ -701,13 +749,16 @@
       const groupLabel = urlData.group?.trim();
 
       const statusClass = urlData.status === 'online' ? 'bg-green-500' : urlData.status === 'offline' ? 'bg-red-500' : 'bg-gray-400';
-      const statusText = urlData.status === 'online' ? 'Online' : urlData.status === 'offline' ? 'Offline' : 'Checking...';
+      // const statusText = urlData.status === 'online' ? 'Online' : urlData.status === 'offline' ? 'Offline' : 'Checking...';
+
+      const groupLabelHash = groupLabel ? sha256( groupLabel ).substring(0,12) : '';
+      const labelBG = groupLabel ? 'rgba(' + colorHexToRgbA( hexColorFromHash( groupLabelHash )[ 0 ] ) + ',0.25)' : '';
 
       row.innerHTML = `
         <div class="meta flex flex-col">
             <span class="status-pill status-${status} ${statusClass}">&nbsp;</span>
             <span class="alias-name">${alias}</span>
-            ${groupLabel ? `<span class="group-pill">${groupLabel}</span>` : ''}
+            ${groupLabel ? `<span class="group-pill text-gray-700 bg-[${labelBG}]">${groupLabel}</span>` : ''}
         </div>
         <div class="url"><a href="${urlData.url || ''}">${urlData.url || ''}</a></div>
         <div class="meta">

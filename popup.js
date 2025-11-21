@@ -8,6 +8,7 @@ const urlList = document.getElementById('urlList');
 const emptyState = document.getElementById('emptyState');
 const newGroupInput = document.getElementById('newGroup');
 const hideLauncherToggle = document.getElementById('hideLauncherToggle');
+const notificationsToggle = document.getElementById('notificationsToggle');
 const tabButtons = document.querySelectorAll('[data-tab-target]');
 const tabPanels = document.querySelectorAll('.tab-panel');
 let currentTab = '';
@@ -25,21 +26,71 @@ document.addEventListener('DOMContentLoaded', async () => {
 function initializeTooltips() {
   if (typeof tippy !== 'undefined') {
     tippy('[data-tippy-content]', {
-      theme: 'light-border',
+      theme: 'light-border bg-white p-1 drop-shadow',
       placement: 'top',
-      arrow: true
+      arrow: true,
+      removeOnDestroy: true
     });
   }
 }
+function paddCols(splArr) {
+  var ret = [];
+
+  for (var i = 0; i < splArr.length; i++) {
+    var col = splArr[i];
+
+    for (var r = 0; r < (6 - (splArr[i]).toString().length); r++) {
+      col += '0';
+    }
+
+    ret.push(col);
+  }
+
+  return ret;
+}
+
+function colorHexToRgbA(hex)
+{
+    var c;
+    if ( /^#([A-Fa-f0-9]{3}){1,2}$/.test( hex ) )
+    {
+        c= hex.substring(1).split('');
+        if(c.length== 3){
+            c= [c[0], c[0], c[1], c[1], c[2], c[2]];
+        }
+        c= '0x'+c.join('');
+        return (''+[(c>>16)&255, (c>>8)&255, c&255].join(',')+'');
+    }
+    throw new Error('Bad Hex: ' + hex);
+}
+
+function hexColorFromHash( strHash )
+{
+    var useHash = strHash || '0xD503d8369ed6CA01321456b070CAbd34449642b8';
+    var cols = paddCols( useHash.substring(2).match(/.{1,6}/g) );
+    var final = [];
+
+    for (var i = 0; i < cols.length; i++)
+    {
+        final.push ('#' + cols[ i ] );
+    }
+
+    return final;
+}
+
 
 // Load settings from storage
 async function loadSettings() {
-  const result = await chrome.storage.sync.get(['pingInterval', 'hideLauncher']);
+  const result = await chrome.storage.sync.get(['pingInterval', 'hideLauncher', 'notificationsEnabled']);
   if (result.pingInterval) {
     pingIntervalInput.value = result.pingInterval;
   }
   if (hideLauncherToggle) {
     hideLauncherToggle.checked = Boolean(result.hideLauncher);
+  }
+  if (notificationsToggle) {
+    const enabled = result.notificationsEnabled;
+    notificationsToggle.checked = enabled !== false;
   }
 }
 
@@ -100,8 +151,10 @@ function createUrlItem(urlData, index) {
     ? `<div class="text-xs text-gray-500 break-all" data-tippy-content="${urlData.url}">${urlData.url}</div>`
     : '';
   const groupLabel = urlData.group?.trim();
+  const groupLabelHash = groupLabel ? sha256( groupLabel ).substring(0,12) : '';
+  const labelBG = groupLabel ? 'rgba(' + colorHexToRgbA( hexColorFromHash( groupLabelHash )[ 0 ] ) + ',0.25)' : '';
   const groupLine = groupLabel
-    ? `<div class="inline-flex items-center px-2 py-0.5 mt-1 text-[11px] font-medium rounded-full bg-indigo-100 text-indigo-700">
+    ? `<div class="inline-flex items-center px-2 py-0.5 mt-1 text-[11px] font-medium rounded-full bg-[${labelBG}] text-gray-700">
          ${groupLabel}
        </div>`
     : '';
@@ -117,7 +170,7 @@ function createUrlItem(urlData, index) {
       </div>
     </div>
     <button 
-      class="delete-url px-3 py-1 bg-slate-400 text-white rounded-md hover:bg-slate-600 transition-colors text-sm"
+      class="delete-url px-3 py-1 bg-red-400 text-white rounded-md hover:bg-red-600 transition-colors text-sm"
       data-index="${index}"
       data-tippy-content="Remove this URL from monitoring"
     >
@@ -164,6 +217,9 @@ function setupEventListeners() {
   }
   if (hideLauncherToggle) {
     hideLauncherToggle.addEventListener('change', handleHideLauncherToggle);
+  }
+  if (notificationsToggle) {
+    notificationsToggle.addEventListener('change', handleNotificationsToggle);
   }
 }
 
@@ -223,6 +279,11 @@ async function saveInterval() {
 async function handleHideLauncherToggle() {
   const hideLauncher = hideLauncherToggle.checked;
   await chrome.storage.sync.set({ hideLauncher });
+}
+
+async function handleNotificationsToggle() {
+  const enabled = notificationsToggle.checked;
+  await chrome.storage.sync.set({ notificationsEnabled: enabled });
 }
 
 // Add new URL
