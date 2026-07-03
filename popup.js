@@ -122,13 +122,13 @@ function renderUrls(urls) {
 // Create URL item element
 function createUrlItem(urlData, index) {
   const div = document.createElement('div');
-  div.className = 'flex items-center justify-between p-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors';
+  div.className = 'url-item';
   
   const statusClass = urlData.status === 'online' 
-    ? 'bg-green-500' 
+    ? 'status-online' 
     : urlData.status === 'offline' 
-    ? 'bg-red-500' 
-    : 'bg-gray-400';
+    ? 'status-offline' 
+    : 'status-checking';
   
   const statusText = urlData.status === 'online' 
     ? 'Online' 
@@ -148,29 +148,29 @@ function createUrlItem(urlData, index) {
   const displayName = hasAlias ? urlData.alias.trim() : urlData.url;
   const primaryTooltip = hasAlias ? urlData.alias.trim() : urlData.url;
   const aliasLine = hasAlias
-    ? `<div class="text-xs text-gray-500 break-all" data-tippy-content="${urlData.url}">${urlData.url}</div>`
+    ? `<div class="url-subtext" data-tippy-content="${urlData.url}">${urlData.url}</div>`
     : '';
   const groupLabel = urlData.group?.trim();
   const groupLabelHash = groupLabel ? sha256( groupLabel ).substring(0,12) : '';
   const labelBG = groupLabel ? 'rgba(' + colorHexToRgbA( hexColorFromHash( groupLabelHash )[ 0 ] ) + ',0.25)' : '';
   const groupLine = groupLabel
-    ? `<div class="inline-flex items-center px-2 py-0.5 mt-1 text-[11px] font-medium rounded-full bg-[${labelBG}] text-gray-700">
+    ? `<div class="group-badge" style="background-color: ${labelBG}">
          ${groupLabel}
        </div>`
     : '';
   
   div.innerHTML = `
-    <div class="flex items-center gap-3 flex-1">
-      <div class="status-indicator w-3 h-3 rounded-full ${statusClass}" data-tippy-content="${statusText}"></div>
-      <div class="flex-1">
-        <div class="font-medium text-gray-800 url-text break-words" data-tippy-content="${primaryTooltip}">${displayName}</div>
+    <div class="url-item-left">
+      <div class="status-indicator ${statusClass}" data-tippy-content="${statusText}"></div>
+      <div class="url-item-details">
+        <div class="url-display-name" data-tippy-content="${primaryTooltip}">${displayName}</div>
         ${aliasLine}
         ${groupLine}
-        <div class="text-xs text-gray-500 last-checked" data-tippy-content="${fullLastChecked}">Last checked: ${lastChecked}</div>
+        <div class="last-checked" data-tippy-content="${fullLastChecked}">Last checked: ${lastChecked}</div>
       </div>
     </div>
     <button 
-      class="delete-url px-3 py-1 bg-red-400 text-white rounded-md hover:bg-red-600 transition-colors text-sm"
+      class="btn btn-danger delete-url"
       data-index="${index}"
       data-tippy-content="Remove this URL from monitoring"
     >
@@ -266,13 +266,13 @@ async function saveInterval() {
   // Show success feedback
   const originalText = saveIntervalBtn.textContent;
   saveIntervalBtn.textContent = 'Saved!';
-  saveIntervalBtn.classList.add('bg-green-500', 'hover:bg-green-600');
-  saveIntervalBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+  saveIntervalBtn.classList.add('btn-success');
+  saveIntervalBtn.classList.remove('btn-primary');
   
   setTimeout(() => {
     saveIntervalBtn.textContent = originalText;
-    saveIntervalBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
-    saveIntervalBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
+    saveIntervalBtn.classList.remove('btn-success');
+    saveIntervalBtn.classList.add('btn-primary');
   }, 2000);
 }
 

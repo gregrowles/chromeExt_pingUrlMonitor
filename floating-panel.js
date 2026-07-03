@@ -178,19 +178,27 @@
         font-weight: 600;
         text-transform: capitalize;
         margin-right:4px;
+        height: 12px;
       }
       #${PANEL_ID} .group-pill {
         display: inline-flex;
         align-items: center;
         padding: 1px 6px;
         border-radius: 999px;
-        /* background: rgba(99, 102, 241, 0.15);
-        color: #4338ca; */
+        color: #374151;
         font-size: 10px;
         font-weight: 600;
         white-space: nowrap;
         margin-top: 2px;
-        margin-left:4px;
+        margin-left: 4px;
+      }
+      #${PANEL_ID} .alias-row .meta.flex-col {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+      }
+      #${PANEL_ID} .whitespace-nowrap {
+        white-space: nowrap;
       }
       #${PANEL_ID} .status-online {
         background: rgb(34,197,95);
@@ -303,47 +311,43 @@
 
   function paddCols(splArr) {
     var ret = [];
-  
+
     for (var i = 0; i < splArr.length; i++) {
       var col = splArr[i];
-  
+
       for (var r = 0; r < (6 - (splArr[i]).toString().length); r++) {
         col += '0';
       }
-  
+
       ret.push(col);
     }
-  
+
     return ret;
   }
-  
-  function colorHexToRgbA(hex)
-  {
-      var c;
-      if ( /^#([A-Fa-f0-9]{3}){1,2}$/.test( hex ) )
-      {
-          c= hex.substring(1).split('');
-          if(c.length== 3){
-              c= [c[0], c[0], c[1], c[1], c[2], c[2]];
-          }
-          c= '0x'+c.join('');
-          return (''+[(c>>16)&255, (c>>8)&255, c&255].join(',')+'');
+
+  function colorHexToRgbA(hex) {
+    var c;
+    if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
+      c = hex.substring(1).split('');
+      if (c.length == 3) {
+        c = [c[0], c[0], c[1], c[1], c[2], c[2]];
       }
-      throw new Error('Bad Hex: ' + hex);
+      c = '0x' + c.join('');
+      return ('' + [(c >> 16) & 255, (c >> 8) & 255, c & 255].join(',') + '');
+    }
+    throw new Error('Bad Hex: ' + hex);
   }
-  
-  function hexColorFromHash( strHash )
-  {
-      var useHash = strHash || '0xD503d8369ed6CA01321456b070CAbd34449642b8';
-      var cols = paddCols( useHash.substring(2).match(/.{1,6}/g) );
-      var final = [];
-  
-      for (var i = 0; i < cols.length; i++)
-      {
-          final.push ('#' + cols[ i ] );
-      }
-  
-      return final;
+
+  function hexColorFromHash(strHash) {
+    var useHash = strHash || '0xD503d8369ed6CA01321456b070CAbd34449642b8';
+    var cols = paddCols(useHash.substring(2).match(/.{1,6}/g));
+    var final = [];
+
+    for (var i = 0; i < cols.length; i++) {
+      final.push('#' + cols[i]);
+    }
+
+    return final;
   }
 
   async function loadPreferences() {
@@ -376,8 +380,8 @@
   function refreshLauncherVisibility() {
     const shouldShow = Boolean(
       panelElement &&
-        panelElement.classList.contains('is-hidden') &&
-        !hideLauncherPreference
+      panelElement.classList.contains('is-hidden') &&
+      !hideLauncherPreference
     );
     toggleLauncher(shouldShow);
   }
@@ -571,16 +575,34 @@
     if (!launcherButton) return;
     const online = latestTotals.online ?? 0;
     const offline = latestTotals.offline ?? 0;
-    launcherButton.innerHTML = `
-      <div class="launcher-section">
-        <span class="count-badge badge-online" title="${online} online">${online}</span>
-        <span class="badge-label">online</span>
-      </div>
-      <div class="launcher-section">
-        <span class="count-badge badge-offline${offline>0?'-hot':''}" title="${offline} offline">${offline}</span>
-        <span class="badge-label">offline</span>
-      </div>
-    `;
+
+    launcherButton.innerHTML = ``;
+
+    if (online > 0) {
+      launcherButton.innerHTML += `
+        <div class="launcher-section">
+          <span class="count-badge badge-online" title="${online} online">${online}</span>
+          <span class="badge-label">online</span>
+        </div>`;
+    }
+
+    if (offline > 0) {
+      launcherButton.innerHTML += `
+        <div class="launcher-section">
+          <span class="count-badge badge-offline${offline > 0 ? '-hot' : ''}" title="${offline} offline">${offline}</span>
+          <span class="badge-label">offline</span>
+        </div>`;
+    }
+    // launcherButton.innerHTML = `
+    //   <div class="launcher-section">
+    //     <span class="count-badge badge-online" title="${online} online">${online}</span>
+    //     <span class="badge-label">online</span>
+    //   </div>
+    //   <div class="launcher-section">
+    //     <span class="count-badge badge-offline${offline > 0 ? '-hot' : ''}" title="${offline} offline">${offline}</span>
+    //     <span class="badge-label">offline</span>
+    //   </div>
+    // `;
   }
 
   function createPanel() {
@@ -707,9 +729,9 @@
       `<div style="line-height:14px;"><span style="font-size:13px; background: rgb(34,197,95);color:#fff;border-radius: 50%;padding: 1 4px;text-align:center;padding: 0 3px;">${totals.online}</span> online</div>`
     ];
 
-    if ( totals.offline != 0 ) countParts.push( `<div class="whitespace-nowrap"><span style="font-size:13px; background:red;color:#fff; border-radius: 50%; width:14px;text-align:center;padding: 0 3px;">${totals.offline}</span> offline</div>` );
-    if ( totals.checking != 0 ) countParts.push( `<div class="whitespace-nowrap">${totals.checking} checking</div>` );
-    
+    if (totals.offline != 0) countParts.push(`<div class="whitespace-nowrap"><span style="font-size:13px; background:red;color:#fff; border-radius: 50%; width:14px;text-align:center;padding: 0 3px;">${totals.offline}</span> offline</div>`);
+    if (totals.checking != 0) countParts.push(`<div class="whitespace-nowrap">${totals.checking} checking</div>`);
+
     summaryCountsElement.innerHTML = countParts.join('');
 
     if (!totalUrls) {
@@ -748,17 +770,14 @@
       const alias = urlData.alias?.trim() || urlData.url || 'Unknown URL';
       const groupLabel = urlData.group?.trim();
 
-      const statusClass = urlData.status === 'online' ? 'bg-green-500' : urlData.status === 'offline' ? 'bg-red-500' : 'bg-gray-400';
-      // const statusText = urlData.status === 'online' ? 'Online' : urlData.status === 'offline' ? 'Offline' : 'Checking...';
-
-      const groupLabelHash = groupLabel ? sha256( groupLabel ).substring(0,12) : '';
-      const labelBG = groupLabel ? 'rgba(' + colorHexToRgbA( hexColorFromHash( groupLabelHash )[ 0 ] ) + ',0.25)' : '';
+      const groupLabelHash = groupLabel ? sha256(groupLabel).substring(0, 12) : '';
+      const labelBG = groupLabel ? 'rgba(' + colorHexToRgbA(hexColorFromHash(groupLabelHash)[0]) + ',0.25)' : '';
 
       row.innerHTML = `
-        <div class="meta flex flex-col">
-            <span class="status-pill status-${status} ${statusClass}">&nbsp;</span>
+        <div class="meta">
+            <span class="status-pill status-${status}">&nbsp;</span>
             <span class="alias-name">${alias}</span>
-            ${groupLabel ? `<span class="group-pill text-gray-700 bg-[${labelBG}]">${groupLabel}</span>` : ''}
+            ${groupLabel ? `<span class="group-pill" style="background-color: ${labelBG}">${groupLabel}</span>` : ''}
         </div>
         <div class="url"><a href="${urlData.url || ''}">${urlData.url || ''}</a></div>
         <div class="meta">
