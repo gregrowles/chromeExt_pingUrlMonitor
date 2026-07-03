@@ -31,7 +31,6 @@
       ],
       "js": [
         "sha256.js",
-        "tailwindcss_cdn_405.js",
         "floating-panel.js"
       ],
       "run_at": "document_idle"

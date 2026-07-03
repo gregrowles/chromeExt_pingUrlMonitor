@@ -3,6 +3,7 @@
 let pingInterval = 30; // Default interval in seconds
 let monitoringUrls = new Set();
 let alarmName = 'urlPingCheck';
+let notificationsEnabled = true;
 
 // Initialize on extension install/startup
 chrome.runtime.onInstalled.addListener(async () => {
@@ -19,9 +20,14 @@ chrome.runtime.onStartup.addListener(async () => {
 
 // Load settings
 async function loadSettings() {
-  const result = await chrome.storage.sync.get(['pingInterval']);
+  const result = await chrome.storage.sync.get(['pingInterval', 'notificationsEnabled']);
   if (result.pingInterval) {
     pingInterval = result.pingInterval;
+  }
+  if (result.notificationsEnabled === false) {
+    notificationsEnabled = false;
+  } else {
+    notificationsEnabled = true;
   }
 }
 
@@ -132,6 +138,9 @@ async function updateUrlStatus(url, status) {
 
 // Notify user when URL goes offline
 async function notifyOffline(url) {
+  if (!notificationsEnabled) {
+    return;
+  }
   // Request notification permission
   const permission = await chrome.notifications.getPermissionLevel();
   
@@ -172,6 +181,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   
   return true; // Keep message channel open for async response
+});
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== 'sync') return;
+  if (Object.prototype.hasOwnProperty.call(changes, 'notificationsEnabled')) {
+    const newValue = changes.notificationsEnabled.newValue;
+    notificationsEnabled = newValue !== false;
+  }
 });
 
 // Check URLs immediately when extension starts
