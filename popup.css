@@ -9,23 +9,23 @@
   --danger: #ef4444;
   --danger-hover: #dc2626;
   --warning: #f59e0b;
-  
+
   --bg-body: #f8fafc;
   --bg-card: #ffffff;
   --bg-hover: #f1f5f9;
-  
+
   --text-main: #0f172a;
   --text-muted: #64748b;
   --text-inverse: #ffffff;
-  
+
   --border: #e2e8f0;
   --border-focus: #93c5fd;
-  
+
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.08);
-  
+
   /* Transitions */
   --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -52,7 +52,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding-bottom: 80px; /* Space for sticky navigation */
+  padding-bottom: 80px;
+  /* Space for sticky navigation */
 }
 
 /* Header */
@@ -137,6 +138,16 @@ body {
 
 .btn-danger:hover {
   background-color: var(--danger-hover);
+}
+
+.delete-url {
+  color: #888;
+}
+
+.delete-url:hover {
+  /* background-color: transparent; */
+  color: var(--danger-hover);
+  filter: drop-shadow(2px 2px 8px rgba(100, 100, 100, 0.4));
 }
 
 /* Input Fields */
@@ -422,8 +433,43 @@ body {
     opacity: 0;
     transform: translateY(8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* Custom Tooltip Styling */
+.custom-tooltip {
+  position: fixed;
+  background-color: #0f172a; /* Slate-900 */
+  color: #f8fafc; /* Slate-50 */
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.15), 0 2px 4px -2px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+  z-index: 99999;
+  max-width: 250px;
+  word-wrap: break-word;
+  white-space: normal;
+  border: 1px solid #334155; /* Slate-700 */
+  animation: fadeIn 0.15s ease-out;
+}
+
+.custom-tooltip.hidden {
+  display: none !important;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
