@@ -8,7 +8,6 @@ A Chrome extension that allows you to monitor multiple URLs and get notified whe
 - ✅ Configurable ping interval (minimum 5 seconds)
 - ✅ Real-time status updates (Online/Offline)
 - ✅ Desktop notifications when URLs go offline
-- ✅ Beautiful UI built with Tailwind CSS
 - ✅ Last checked timestamp for each URL
 
 ## Installation
@@ -65,7 +64,6 @@ The extension requires the following permissions:
 
 ## Technologies
 
-- Tailwind CSS (via CDN) - Styling
 - Popper.js (via CDN) - Tooltip/popper functionality
 - Chrome Extensions API - Extension functionality
 
