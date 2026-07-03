@@ -178,6 +178,7 @@
         font-weight: 600;
         text-transform: capitalize;
         margin-right:4px;
+        height: 12px;
       }
       #${PANEL_ID} .group-pill {
         display: inline-flex;
@@ -574,16 +575,34 @@
     if (!launcherButton) return;
     const online = latestTotals.online ?? 0;
     const offline = latestTotals.offline ?? 0;
-    launcherButton.innerHTML = `
-      <div class="launcher-section">
-        <span class="count-badge badge-online" title="${online} online">${online}</span>
-        <span class="badge-label">online</span>
-      </div>
-      <div class="launcher-section">
-        <span class="count-badge badge-offline${offline > 0 ? '-hot' : ''}" title="${offline} offline">${offline}</span>
-        <span class="badge-label">offline</span>
-      </div>
-    `;
+
+    launcherButton.innerHTML = ``;
+
+    if (online > 0) {
+      launcherButton.innerHTML += `
+        <div class="launcher-section">
+          <span class="count-badge badge-online" title="${online} online">${online}</span>
+          <span class="badge-label">online</span>
+        </div>`;
+    }
+
+    if (offline > 0) {
+      launcherButton.innerHTML += `
+        <div class="launcher-section">
+          <span class="count-badge badge-offline${offline > 0 ? '-hot' : ''}" title="${offline} offline">${offline}</span>
+          <span class="badge-label">offline</span>
+        </div>`;
+    }
+    // launcherButton.innerHTML = `
+    //   <div class="launcher-section">
+    //     <span class="count-badge badge-online" title="${online} online">${online}</span>
+    //     <span class="badge-label">online</span>
+    //   </div>
+    //   <div class="launcher-section">
+    //     <span class="count-badge badge-offline${offline > 0 ? '-hot' : ''}" title="${offline} offline">${offline}</span>
+    //     <span class="badge-label">offline</span>
+    //   </div>
+    // `;
   }
 
   function createPanel() {
